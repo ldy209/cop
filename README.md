@@ -1,0 +1,123 @@
+https://colab.research.google.com/drive/1lTGZsfMaGUpBG4inDIQwIJVW476ibXk_#scrollTo=r_A8LDvyM7x5
+
+
+https://colab.research.google.com/drive/1l3_RGr69OF-79Kxp8zDSpJrNNNMlclPf#scrollTo=AayU7PMaoJoT
+
+
+
+%tensorflow_version 2.x
+import tensorflow as tf
+tf.__version__
+
+from tensorflow import keras
+keras.__version__
+
+
+mnist = keras.datasets.mnist
+(X_train0, y_train0), (X_test0, y_test0) = mnist.load_data()
+
+import matplotlib.pylab as plt
+
+plt.figure(figsize=(6, 1))
+for i in range(36):
+    plt.subplot(3, 12, i+1)
+    plt.imshow(X_train0[i], cmap="gray")
+    plt.axis("off")
+plt.show()
+
+print(X_train0.shape, X_train0.dtype)
+print(y_train0.shape, y_train0.dtype)
+print(X_test0.shape, X_test0.dtype)
+print(y_test0.shape, y_test0.dtype)
+
+X_train = X_train0.reshape(60000, 784).astype('float32') / 255.0
+X_test = X_test0.reshape(10000, 784).astype('float32') / 255.0
+print(X_train.shape, X_train.dtype)
+
+
+y_train0[:5]
+
+from tensorflow.keras.utils import to_categorical
+
+Y_train = to_categorical(y_train0, 10)
+Y_test = to_categorical(y_test0, 10)
+Y_train[:5]
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import SGD
+
+tf.random.set_seed(0)
+
+model = Sequential()
+model.add(Dense(15, input_dim=784, activation="sigmoid"))
+model.add(Dense(10, activation="sigmoid"))
+model.compile(optimizer=SGD(lr=0.2), loss='mean_squared_error', metrics=["accuracy"])
+
+model.summary()
+
+l1 = model.layers[0]
+l2 = model.layers[1]
+
+print(l1.name, type(l1), l1.output_shape, l1.activation.__name__, l1.count_params())
+print(l2.name, type(l1), l2.output_shape, l2.activation.__name__, l2.count_params())
+
+
+#%%time
+hist = model.fit(X_train, Y_train,
+                 epochs=7, batch_size=100,
+                 validation_data=(X_test, Y_test),
+                 verbose=2)
+
+plt.figure(figsize=(8, 4))
+plt.subplot(1, 2, 1)
+plt.plot(hist.history['loss'])
+plt.title("loss")
+plt.subplot(1, 2, 2)
+plt.title("accuracy")
+plt.plot(hist.history['accuracy'], 'b-', label="training")
+plt.plot(hist.history['val_accuracy'], 'r:', label="validation")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+
+# 첫번째 레이어
+w1 = l1.get_weights()
+w1[0].shape, w1[1].shape
+print(w1[0].shape)
+print(w1[1].shape)
+
+
+# 두번째 레이어
+w2 = l2.get_weights()
+w2[0].shape, w2[1].shape
+
+print(w2[0].shape)
+print(w2[1].shape)
+
+model.predict(X_test[:1, :])
+
+print( '예상하는 정답 : ', model.predict_classes(X_test[:1, :], verbose=0))
+
+plt.figure(figsize=(1, 1))
+plt.imshow(X_test0[0], cmap=plt.cm.bone_r)
+plt.grid(False)
+plt.axis("off")
+plt.show()
+
+
+plt.figure(figsize=(6, 1))
+for i in range(36):
+    plt.subplot(3, 12, i+1)
+    plt.imshow(X_test0[i], cmap="gray")
+    plt.axis("off")
+plt.show()
+
+
+#import numpy as np
+#X_test0 = np.reshape(X_test0, (-1, 28*28))
+#y_test0 = np.reshape(y_test0, (-1, 28*28))
+score = model.evaluate(X_test, Y_test, verbose=0)
+
+print('\n', 'Test accuracy:', score[1])
